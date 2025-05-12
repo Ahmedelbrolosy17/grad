@@ -1,203 +1,246 @@
 "use client";
-import React, { useState } from "react";
-import { Provider, useSelector } from "react-redux";
-import { configureStore, createSlice } from "@reduxjs/toolkit";
-import { Pencil } from "lucide-react";
+import React, { useState, useEffect } from "react";
 
-const productsSlice = createSlice({
-  name: "products",
-  initialState: [
-    {
-      description: "description 1",
-      price: 200,
-      sizes: ["XS", "S", "L", "XL"],
-      colors: [
-        "#007bff",
-        "#f8c4e1",
-        "#c0c0c0",
-        "#000",
-        "#f1c40f",
-        "#e74c3c",
-        "#27ae60",
-        "#9b59b6",
-        "#e67e22",
-        "#1abc9c",
-      ],
-    },
-  ],
-  reducers: {},
-});
-
-const store = configureStore({
-  reducer: {
-    products: productsSlice.reducer,
-  },
-});
-
-const ProductCard = ({ product }) => {
-  const [imageUrl, setImageUrl] = useState(null);
-  const [description, setDescription] = useState(product.description);
-  const [price, setPrice] = useState(product.price);
+export default function ProductForm({ productId }) {
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [categorie, setCategorie] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
-  const [editDescription, setEditDescription] = useState(false);
-  const [editPrice, setEditPrice] = useState(false);
+  const [storeId, setStoreId] = useState(""); 
+  const [categoryId, setCategoryId] = useState(""); 
+
+  useEffect(() => {
+    if (productId) {
+      fetchProductData(productId);
+    }
+  }, [productId]);
+
+  const fetchProductData = async (id) => {
+    try {
+      const res = await fetch(`http://ma7aliapigrad.runasp.net/api/StoreProduct/GetProduct/${id}`);
+      const data = await res.json();
+      if (res.ok) {
+        setCategorie(data.Name);
+        setDescription(data.Description);
+        setPrice(data.Price);
+        setCategoryId(data.CategoryId);
+        setStoreId(data.StoreId);
+        setImagePreview(data.ImageUrl); // Assuming the image URL is provided in the response
+        setSelectedSize(data.Size || "M");
+        setSelectedColor(data.Color || "red");
+      } else {
+        alert("Failed to fetch product data.");
+      }
+    } catch (error) {
+      alert("Failed to fetch product data.");
+      console.error(error);
+    }
+  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImageUrl(reader.result);
+        setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const triggerUpload = () => {
-    document.getElementById("imageUpload").click();
+  const handleSave = async () => {
+    if (!imageFile) return alert("Please upload an image");
+
+    const productData = {
+      name: categorie,
+      description: description || "Test description",
+      price: price || 100,
+      stock: 20, // Set stock as needed
+      creationTime: new Date().toISOString(),
+      images: [{ imageUrl: imagePreview }], // Assuming imageUrl is part of the request
+      categoryId: categoryId || "2", // Category ID
+      storeId: storeId || "1", // Store ID
+    };
+
+    const url = productId
+      ? `http://ma7aliapigrad.runasp.net/api/StoreProduct/UpdateProduct` // For updating
+      : "http://ma7aliapigrad.runasp.net/api/StoreProduct/CreateProduct"; // For creating a new product
+
+    try {
+      const res = await fetch(url, {
+        method: productId ? "PUT" : "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(productData),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert(productId ? "Product successfully updated ✅" : "Product successfully created ✅");
+        console.log(data);
+      } else {
+        alert(`Error: ${data.Message}`);
+        console.error(data);
+      }
+    } catch (error) {
+      alert("Failed to send data");
+      console.error(error);
+    }
   };
 
-  const selectSize = (size) => {
-    setSelectedSize(size === selectedSize ? "" : size);
-  };
+  const colors = [
+    "red",
+    "orange",
+    "green",
+    "teal",
+    "white",
+    "lightblue",
+    "cyan",
+    "yellow",
+    "blue",
+    "black",
+  ];
 
-  const selectColor = (color) => {
-    setSelectedColor(color === selectedColor ? "" : color);
-  };
+  const sizes = ["XS", "S", "M", "L", "XL", "2XL", "3XL"];
 
   return (
-    <div className="relative group w-[36rem]">
-      <div
-        onClick={triggerUpload}
-        className="absolute top-2 right-6 z-10 bg-white p-1 rounded-full shadow cursor-pointer"
-      >
-        <Pencil className="w-4 h-4 text-gray-600" />
-      </div>
-      <input
-        type="file"
-        accept="image/*"
-        id="imageUpload"
-        onChange={handleImageUpload}
-        className="hidden"
-      />
-      <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 text-base">
-        <div className="h-56 bg-gray-100 rounded-lg mb-6 flex items-center justify-center overflow-hidden">
-          {imageUrl ? (
-            <img src={imageUrl} alt="Product" className="h-full object-cover" />
-          ) : (
-            <span className="text-gray-400">No Image</span>
-          )}
-        </div>
-
-        <div className="mb-5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-black">Description:</label>
-            {editDescription ? (
-              <input
-                type="text"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                onBlur={() => setEditDescription(false)}
-                autoFocus
-                className="border rounded px-3 py-1 text-sm w-48 text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-200 via-gray-400 to-gray-600 backdrop-blur-sm">
+      <div className="p-8 w-full max-w-2xl bg-white/80 rounded-2xl shadow-2xl space-y-6 backdrop-blur-md">
+        <div className="flex flex-col items-center">
+          <div className="border-2 border-dashed border-gray-400 rounded-xl p-6 flex items-center justify-center relative w-40 h-40 bg-white/30">
+            {imagePreview ? (
+              <img
+                src={imagePreview}
+                alt="Uploaded"
+                className="w-full h-full object-cover rounded-xl"
               />
             ) : (
-              <span className="text-gray-800">{description}</span>
+              <label
+                htmlFor="imageUpload"
+                className="cursor-pointer text-5xl text-gray-500"
+              >
+                +
+              </label>
             )}
+            <input
+              id="imageUpload"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageUpload}
+            />
           </div>
-          <Pencil
-            onClick={() => setEditDescription(!editDescription)}
-            className="w-4 h-4 text-gray-600 cursor-pointer"
-          />
         </div>
 
-        <div className="mb-5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-black">Price:</label>
-            {editPrice ? (
-              <input
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                onBlur={() => setEditPrice(false)}
-                autoFocus
-                className="border rounded px-3 py-1 text-sm w-32 text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            ) : (
-              <span className="text-gray-800">${price}</span>
-            )}
+        <div className="space-y-5">
+          <div className="flex flex-col">
+            <label className="text-gray-700 font-semibold mb-1">Category ID</label>
+            <input
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-teal-500 outline-none bg-white/70 placeholder-gray-500"
+              type="number"
+              placeholder="Enter Category ID"
+            />
           </div>
-          <Pencil
-            onClick={() => setEditPrice(!editPrice)}
-            className="w-4 h-4 text-gray-600 cursor-pointer"
-          />
+
+          <div className="flex flex-col">
+            <label className="text-gray-700 font-semibold mb-1">Store ID</label>
+            <input
+              value={storeId}
+              onChange={(e) => setStoreId(e.target.value)}
+              className="border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-teal-500 outline-none bg-white/70 placeholder-gray-500"
+              type="number"
+              placeholder="Enter Store ID"
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-gray-700 font-semibold mb-1">Category Name</label>
+            <input
+              value={categorie}
+              onChange={(e) => setCategorie(e.target.value)}
+              className="border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-teal-500 outline-none bg-white/70 placeholder-gray-500"
+              type="text"
+              placeholder="Type category"
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-gray-700 font-semibold mb-1">Description</label>
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-teal-500 outline-none bg-white/70 placeholder-gray-500"
+              type="text"
+              placeholder="Type description"
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-gray-700 font-semibold mb-1">Price</label>
+            <input
+              type="number"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-teal-500 outline-none bg-white/70 placeholder-gray-500"
+              placeholder="0"
+            />
+          </div>
         </div>
 
-        <div className="mb-5">
-          <label className="text-sm text-black mr-2">Size:</label>
-          <div className="flex gap-3 flex-wrap">
-            {product.sizes.map((size) => (
-              <div
+        <div className="space-y-3">
+          <span className="font-semibold text-gray-700">Available Size</span>
+          <div className="flex flex-wrap gap-3 mt-2">
+            {sizes.map((size) => (
+              <button
                 key={size}
-                onClick={() => selectSize(size)}
-                className={`px-4 py-1 rounded-full text-sm font-semibold cursor-pointer border transition ${
+                onClick={() => setSelectedSize(size)}
+                className={`px-4 py-2 rounded-full font-medium border transition ${
                   selectedSize === size
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                    ? "bg-teal-500 text-white shadow-md"
+                    : "bg-white text-gray-800 hover:bg-teal-100"
                 }`}
               >
                 {size}
-              </div>
+              </button>
             ))}
           </div>
         </div>
 
-        <div className="mb-6">
-          <label className="text-sm text-black mr-2">Color:</label>
-          <div className="flex gap-3 flex-wrap">
-            {product.colors.map((color, idx) => (
-              <div
-                key={idx}
-                onClick={() => selectColor(color)}
-                className={`w-7 h-7 rounded-full cursor-pointer border transition ${
+        <div className="space-y-3">
+          <span className="font-semibold text-gray-700">Available Color</span>
+          <div className="flex flex-wrap gap-3 mt-2">
+            {colors.map((color) => (
+              <button
+                key={color}
+                onClick={() => setSelectedColor(color)}
+                className={`w-8 h-8 rounded-full border-2 transition ${
                   selectedColor === color
-                    ? "border-black scale-110"
-                    : "border-gray-300"
+                    ? "ring-2 ring-teal-500"
+                    : "hover:opacity-75"
                 }`}
                 style={{ backgroundColor: color }}
-              ></div>
+              ></button>
             ))}
           </div>
         </div>
 
-        <button className="w-28 text-sm bg-blue-600 text-white py-2 rounded-full shadow-md hover:bg-blue-700 transition block mx-auto font-semibold">
-          Save
-        </button>
+        <div className="flex justify-center">
+          <button
+            onClick={handleSave}
+            className="bg-gradient-to-r from-teal-400 to-teal-600 hover:from-teal-500 hover:to-teal-700 text-white font-semibold py-3 px-8 rounded-full shadow-lg transition transform hover:scale-105 duration-300"
+          >
+            {productId ? "Update Product" : "Save Product"}
+          </button>
+        </div>
       </div>
     </div>
   );
-};
-
-const ProductGrid = () => {
-  const products = useSelector((state) => state.products);
-  return (
-    <div className="flex justify-center items-center min-h-screen">
-      {products.map((product, index) => (
-        <ProductCard key={index} product={product} />
-      ))}
-    </div>
-  );
-};
-
-const App = () => {
-  return (
-    <Provider store={store}>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-gray-100 to-gray-200">
-        <ProductGrid />
-      </div>
-    </Provider>
-  );
-};
-
-export default App;
+}

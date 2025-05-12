@@ -80,7 +80,7 @@ const OwnerDashboard = () => {
 
         {/* Main Content */}
         <main className="flex-1 p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-8">
+          {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-8">
             <div className="bg-white shadow-md rounded-lg p-6 text-center w-60 mx-auto">
               <h3 className="text-gray-900 text-lg font-medium">Total Sales</h3>
               <span className="text-2xl font-bold text-gray-500">320</span>
@@ -89,56 +89,10 @@ const OwnerDashboard = () => {
               <h3 className="text-gray-900 text-lg font-medium">Number of Orders</h3>
               <span className="text-2xl font-bold text-gray-500">150</span>
             </div>
-          </div>
+          </div> */}
 
           {/* Best Seller */}
-          <div className="mb-8">
-            <h3 className="text-xl text-gray-950 font-semibold mb-4">Best Seller This Month</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 justify-items-center">
-              {/* Product Card 1 */}
-              <div className="bg-white shadow-md rounded-lg p-4 w-full max-w-[300px]">
-                <img
-                  src="/img1.jpg"
-                  alt="Product 1"
-                  className="w-full h-40 object-cover rounded-lg mb-4"
-                />
-                <h4 className="font-medium text-gray-800">Product Name 1</h4>
-                <p className="text-sm text-gray-600 mb-2">This is a description of the product.</p>
-                <span className="text-lg font-bold">$50</span>
-              </div>
-              <div className="bg-white shadow-md rounded-lg p-4 w-full max-w-[300px]">
-                <img
-                  src="/img1.jpg"
-                  alt="Product 1"
-                  className="w-full h-40 object-cover rounded-lg mb-4"
-                />
-                <h4 className="font-medium text-gray-800">Product Name 1</h4>
-                <p className="text-sm text-gray-600 mb-2">This is a description of the product.</p>
-                <span className="text-lg font-bold">$50</span>
-              </div>
-              <div className="bg-white shadow-md rounded-lg p-4 w-full max-w-[300px]">
-                <img
-                  src="/img1.jpg"
-                  alt="Product 1"
-                  className="w-full h-40 object-cover rounded-lg mb-4"
-                />
-                <h4 className="font-medium text-gray-800">Product Name 1</h4>
-                <p className="text-sm text-gray-600 mb-2">This is a description of the product.</p>
-                <span className="text-lg font-bold">$50</span>
-              </div>
-              {/* Product Card 2 */}
-              <div className="bg-white shadow-md rounded-lg p-4 w-full max-w-[300px]">
-                <img
-                  src="/img2.jpg"
-                  alt="Product 2"
-                  className="w-full h-40 object-cover rounded-lg mb-4"
-                />
-                <h4 className="font-medium text-gray-800">Product Name 2</h4>
-                <p className="text-sm text-gray-600 mb-2">This is a description of the product.</p>
-                <span className="text-lg font-bold">$75</span>
-              </div>
-            </div>
-          </div>
+         
         </main>
       </div>
 

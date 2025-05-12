@@ -10,6 +10,10 @@ module.exports = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        mint: {
+          100: '#D1F2EB',
+          600: '#1ABC9C'
+        },
       },
     },
   },

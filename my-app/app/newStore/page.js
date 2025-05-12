@@ -1,48 +1,44 @@
-"use client"; 
+"use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation"; // Updated import
+import { useRouter } from "next/router";
 
 function CreateStoreForm() {
   const { register, handleSubmit, reset } = useForm();
   const [formData, setFormData] = useState(null);
   const [storeId, setStoreId] = useState(null);
-  const [routerReady, setRouterReady] = useState(false);
 
-  const router = useRouter();
+ const onSubmit = async (data) => {
+  const form = new FormData();
 
-  // Ensuring that router is ready before using it
-  useEffect(() => {
-    if (router) {
-      setRouterReady(true);
-    }
-  }, [router]);
-
-  const onSubmit = async (data) => {
-    setFormData(data);
-    console.log("Form Submitted:", data);
-
-    // Send the request to create the store
-    const response = await fetch("http://ma7aliapigrad.runasp.net/api/Store", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-
-    if (response.ok) {
-      // Redirect to the "congrats" page after successful store creation
-      router.push("/congrats");
+  for (const key in data) {
+    if (key === "image") {
+      form.append("image", data.image[0]);
     } else {
-      console.error("Error creating store");
+      form.append(key, data[key]);
     }
-
-    reset(); // Reset the form after submission
-  };
-
-  if (!routerReady) {
-    return <div>Loading...</div>; // Optionally, show a loading indicator
   }
+
+  try {
+   const response = await fetch("http://ma7aliapigrad.runasp.net/api/Store", {
+  method: "POST",
+  body: form,
+});
+
+
+    const result = await response.json();
+    console.log("Store Created:", result);
+
+    const id = result.id || result._id || result.storeId;
+    setStoreId(id);
+    setFormData(result);
+    reset();
+  } catch (error) {
+    console.error("Error creating store:", error);
+  }
+};
+
 
   return (
     <section className="min-h-screen w-full bg-gradient-to-r from-emerald-100 via-indigo-100 to-pink-100 flex flex-col items-center justify-center px-4 py-12">
@@ -163,6 +159,18 @@ function CreateStoreForm() {
           </button>
         </div>
       </form>
+
+      {formData && (
+        <div className="mt-6 bg-white p-4 rounded-xl shadow text-sm max-w-2xl w-full overflow-x-auto">
+          <h3 className="font-bold mb-2 text-indigo-600">Store Created ✅</h3>
+          <pre>{JSON.stringify(formData, null, 2)}</pre>
+          {storeId && (
+            <p className="mt-2 text-green-700 font-semibold">
+              Store ID: <span className="font-mono">{storeId}</span>
+            </p>
+          )}
+        </div>
+      )} 
     </section>
   );
 }

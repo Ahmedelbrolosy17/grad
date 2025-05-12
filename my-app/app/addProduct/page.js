@@ -1,36 +1,95 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-export default function ProductForm() {
-  const [image, setImage] = useState(null);
+export default function ProductForm({ productId }) {
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [categorie, setCategorie] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
+  const [storeId, setStoreId] = useState(""); // Added
+  const [categoryId, setCategoryId] = useState(""); // Added
+
+  useEffect(() => {
+    if (productId) {
+      // Fetch existing product data if editing
+      fetchProductData(productId);
+    }
+  }, [productId]);
+
+  const fetchProductData = async (id) => {
+    try {
+      const res = await fetch(`http://ma7aliapigrad.runasp.net/api/StoreProduct/GetProduct/${id}`);
+      const data = await res.json();
+      if (res.ok) {
+        setCategorie(data.Name);
+        setDescription(data.Description);
+        setPrice(data.Price);
+        setCategoryId(data.CategoryId);
+        setStoreId(data.StoreId);
+        setImagePreview(data.Image); // Assuming the image is available in the response
+        // Pre-select size and color if available
+        setSelectedSize(data.Size || "M");
+        setSelectedColor(data.Color || "red");
+      } else {
+        alert("Failed to fetch product data.");
+      }
+    } catch (error) {
+      alert("Failed to fetch product data.");
+      console.error(error);
+    }
+  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImage(reader.result);
+        setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSave = () => {
-    const productData = {
-      image,
-      categorie,
-      description,
-      price,
-      size: selectedSize,
-      color: selectedColor,
-    };
-    console.log("Product Data:", productData);
-    alert("Data saved to console ✅");
+  const handleSave = async () => {
+    if (!imageFile) return alert("Please upload an image");
+
+    const formData = new FormData();
+    formData.append("BarndId", "1"); // Replace with valid Brand ID from your DB
+    formData.append("Price", price || "100");
+    formData.append("Name", "New Product");
+    formData.append("CreationTime", new Date().toISOString());
+    formData.append("Stock", "20");
+    formData.append("Images", imageFile); // Actual file
+    formData.append("CategoryId", categoryId || "2"); // From input
+    formData.append("StoreId", storeId || "1"); // From input
+    formData.append("Description", description || "Test description");
+
+    const url = productId
+      ? `http://ma7aliapigrad.runasp.net/api/StoreProduct/UpdateProduct/${productId}` // For editing
+      : "http://ma7aliapigrad.runasp.net/api/StoreProduct/CreateProduct"; // For creating a new product
+
+    try {
+      const res = await fetch(url, {
+        method: productId ? "PUT" : "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert(productId ? "Product successfully updated ✅" : "Product successfully created ✅");
+        console.log(data);
+      } else {
+        alert(`Error: ${data.Message}`);
+        console.error(data);
+      }
+    } catch (error) {
+      alert("Failed to send data");
+      console.error(error);
+    }
   };
 
   const colors = [
@@ -53,9 +112,9 @@ export default function ProductForm() {
       <div className="p-8 w-full max-w-2xl bg-white/80 rounded-2xl shadow-2xl space-y-6 backdrop-blur-md">
         <div className="flex flex-col items-center">
           <div className="border-2 border-dashed border-gray-400 rounded-xl p-6 flex items-center justify-center relative w-40 h-40 bg-white/30">
-            {image ? (
+            {imagePreview ? (
               <img
-                src={image}
+                src={imagePreview}
                 alt="Uploaded"
                 className="w-full h-full object-cover rounded-xl"
               />
@@ -79,7 +138,29 @@ export default function ProductForm() {
 
         <div className="space-y-5">
           <div className="flex flex-col">
-            <label className="text-gray-700 font-semibold mb-1">Category</label>
+            <label className="text-gray-700 font-semibold mb-1">Category ID</label>
+            <input
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-teal-500 outline-none bg-white/70 placeholder-gray-500"
+              type="number"
+              placeholder="Enter Category ID"
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-gray-700 font-semibold mb-1">Store ID</label>
+            <input
+              value={storeId}
+              onChange={(e) => setStoreId(e.target.value)}
+              className="border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-teal-500 outline-none bg-white/70 placeholder-gray-500"
+              type="number"
+              placeholder="Enter Store ID"
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-gray-700 font-semibold mb-1">Category Name</label>
             <input
               value={categorie}
               onChange={(e) => setCategorie(e.target.value)}
@@ -154,7 +235,7 @@ export default function ProductForm() {
             onClick={handleSave}
             className="bg-gradient-to-r from-teal-400 to-teal-600 hover:from-teal-500 hover:to-teal-700 text-white font-semibold py-3 px-8 rounded-full shadow-lg transition transform hover:scale-105 duration-300"
           >
-            Save Product
+            {productId ? "Update Product" : "Save Product"}
           </button>
         </div>
       </div>
